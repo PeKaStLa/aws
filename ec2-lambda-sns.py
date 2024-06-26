@@ -81,7 +81,7 @@ def send_mail(info):
         print("Email sent! Message ID:"),
         print(response['MessageId'])
         
-    print(""MAIL-end. Mail sent.")
+    print("MAIL-end. Mail sent.")
     
     
 
