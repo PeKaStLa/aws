@@ -7,11 +7,11 @@ from email.message import EmailMessage
 from botocore.exceptions import ClientError
 from botocore.vendored import requests
 
-print("start")
+print("script-lambda-start")
 
 def send_mail(info):
     
-    print("Start. Sending Mail now.")
+    print("MAIL-start. Sending Mail now.")
     # Replace sender@example.com with your "From" address.
     # This address must be verified with Amazon SES.
     SENDER = "Peter Karl Stadler <peter.stadler@stadlersoft.de>"
@@ -81,11 +81,13 @@ def send_mail(info):
         print("Email sent! Message ID:"),
         print(response['MessageId'])
         
-    print("Mail sent.")
+    print(""MAIL-end. Mail sent.")
     
     
 
 def lambda_handler(event, context):
+    
+    print("lambda_handler-start")
     
     ec2_resource=boto3.resource("ec2")
     ec2_client = boto3.client("ec2")
@@ -130,10 +132,12 @@ def lambda_handler(event, context):
     else:
         print("Do not send mail because no instance was stopped.")
 
-    print("end")
+    print("lambda_handler-end")
 
     # TODO implement
     return {
         'statusCode': 200,
         'body': json.dumps('Erfolg?!')
     }
+
+print("script-lambda-end")
