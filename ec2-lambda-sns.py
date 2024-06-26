@@ -97,11 +97,11 @@ def lambda_handler(event, context):
 
     for instance in ec2_resource.instances.limit(100):
         
-        print(f"\t #################################### \nID: {instance.id} launchtime: {instance.launch_time}")
+        print(f"\t ###############Item/Instance##################### \nID: {instance.id} launchtime: {instance.launch_time}")
         print("instance.state: ", instance.state)
         instance_launchtime=datetime.fromisoformat(str(instance.launch_time))
         instance_launchtime_plus=instance_launchtime + timedelta(hours=4)
-        # instance_launchtime_plus=instance_launchtime + timedelta(minutes=2)
+        #instance_launchtime_plus=instance_launchtime + timedelta(minutes=30)
         nowutc=datetime.now(timezone.utc)
         print("instance_launchtime + x-hours : ", instance_launchtime_plus )  
         print("nowutc: ", nowutc)  
@@ -112,20 +112,19 @@ def lambda_handler(event, context):
 
 
         if str(instance.state) == "{'Code': 16, 'Name': 'running'}" and nowutc > instance_launchtime_plus:
-            print("Instance-state is running and time now-utc is greater than the treshold, which means the instance runs more than x-hours and should be stopped.")
+            print("Instance-state is running and time now-utc is greater than the threshold, which means the instance runs more than x-hours and should be stopped.")
             stop_instances_sendmail=True
             all_ids.append(str(instance.id))
-            mailtext=mailtext + "InstanceID: " + str(instance.id) + ", LaunchTime: " + str(instance.launch_time) + ", Instance.state: " + str(instance.state) + " AND "
+            mailtext=mailtext + "<<<InstanceID: " + str(instance.id) + ", LaunchTime: " + str(instance.launch_time) + ", Stop-Time: " + str(nowutc) + ">>> AND "
         else:
             print("Instance-state is not running and/or time now-utc is smaller than the treshold, which means the instance was just started and runs less than x-hours.")
 
-    print(" ################### middle ################# ")
+    print(" ################### End-logic ################# ")
     if stop_instances_sendmail:
         print("all ids: ")
         print(all_ids)
         response = ec2_client.stop_instances(InstanceIds=all_ids)
         print(response)
-            
         print("final mailtext: => ", mailtext)
         send_mail(mailtext)
     else:
@@ -136,5 +135,5 @@ def lambda_handler(event, context):
     # TODO implement
     return {
         'statusCode': 200,
-        'body': json.dumps('hmmm!')
+        'body': json.dumps('Erfolg?!')
     }
