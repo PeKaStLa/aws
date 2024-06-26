@@ -101,7 +101,7 @@ def lambda_handler(event, context):
         print("instance.state: ", instance.state)
         instance_launchtime=datetime.fromisoformat(str(instance.launch_time))
         instance_launchtime_plus=instance_launchtime + timedelta(hours=4)
-        #instance_launchtime_plus=instance_launchtime + timedelta(minutes=30)
+        #instance_launchtime_plus=instance_launchtime + timedelta(minutes=20)
         nowutc=datetime.now(timezone.utc)
         print("instance_launchtime + x-hours : ", instance_launchtime_plus )  
         print("nowutc: ", nowutc)  
@@ -115,7 +115,7 @@ def lambda_handler(event, context):
             print("Instance-state is running and time now-utc is greater than the threshold, which means the instance runs more than x-hours and should be stopped.")
             stop_instances_sendmail=True
             all_ids.append(str(instance.id))
-            mailtext=mailtext + "<<<InstanceID: " + str(instance.id) + ", LaunchTime: " + str(instance.launch_time) + ", Stop-Time: " + str(nowutc) + ">>> AND "
+            mailtext=mailtext + "-> -> InstanceID: " + str(instance.id) + ", LaunchTime: " + str(instance.launch_time) + ", Stop-Time: " + str(nowutc) + " <- <- AND "
         else:
             print("Instance-state is not running and/or time now-utc is smaller than the treshold, which means the instance was just started and runs less than x-hours.")
 
