@@ -1,7 +1,6 @@
 import json
 import boto3
 from datetime import datetime, timedelta, timezone
-
 import os
 import smtplib
 from email.message import EmailMessage
@@ -30,22 +29,15 @@ def send_mail(info):
     AWS_REGION = "eu-central-1"
     
     # The subject line for the email.
-    SUBJECT = "FINAL - Eine ec2-Instanz war zu lange online und wurde gestoppt"
+    SUBJECT = "Mind. eine ec2-Instanz war zu lange online und wurde gestoppt."
     
     # The email body for recipients with non-HTML email clients.
     BODY_TEXT = ( info )
 
                 
     # The HTML body of the email.
-    BODY_HTML = """<html>
-    <head></head>
-    <body>
-      <h1>"Eine ec2-Instanz war zu lange online und wurde gestoppt."</h1>
-      <p>"Eine ec2-Instanz war zu lange online und wurde gestoppt."</p>
-    </body>
-    </html>
-                """            
-    
+    BODY_HTML = "<html><head></head><body><h1>Mind. eine ec2-Instanz war zu lange online und wurde gestoppt.</h1><p>" + info + "</p></body></html>"
+
     # The character encoding for the email.
     CHARSET = "UTF-8"
     
@@ -89,7 +81,7 @@ def send_mail(info):
         print("Email sent! Message ID:"),
         print(response['MessageId'])
         
-    print("End. Mail sent.")
+    print("Mail sent.")
     
     
 
@@ -97,33 +89,48 @@ def lambda_handler(event, context):
     
     ec2_resource=boto3.resource("ec2")
     ec2_client = boto3.client("ec2")
+    stop_instances_sendmail = False
+    all_ids=''
+    mailtext=''
+    all_ids = []
+
 
     for instance in ec2_resource.instances.limit(100):
         
         print(f"\t #################################### \nID: {instance.id} launchtime: {instance.launch_time}")
         print("instance.state: ", instance.state)
         instance_launchtime=datetime.fromisoformat(str(instance.launch_time))
-        instance_launchtime_plus=instance_launchtime + timedelta(hours=5)
-        # instance_launchtime_plus=instance_launchtime + timedelta(minutes=20)
+        instance_launchtime_plus=instance_launchtime + timedelta(hours=4)
+        # instance_launchtime_plus=instance_launchtime + timedelta(minutes=2)
         nowutc=datetime.now(timezone.utc)
         print("instance_launchtime + x-hours : ", instance_launchtime_plus )  
         print("nowutc: ", nowutc)  
         
+        
+        print("Instance is running") if str(instance.state) == "{'Code': 16, 'Name': 'running'}" else print("Instance is NOT running")
+        print("Instance is online longer than x-hours") if nowutc > instance_launchtime_plus else print("Instance is NOT online longer than x-hours")
+
+
         if str(instance.state) == "{'Code': 16, 'Name': 'running'}" and nowutc > instance_launchtime_plus:
             print("Instance-state is running and time now-utc is greater than the treshold, which means the instance runs more than x-hours and should be stopped.")
-            print("Try stopping the instance: ", instance.id)
-            response = ec2_client.stop_instances(
-                InstanceIds=[
-                    str(instance.id),
-                ]
-            )
-            print(response)
-            send_mail("InstanceID: " + str(instance.id) + ", LaunchTime: " + str(instance.launch_time) + ", Instance.state: " + str(instance.state) )
-           
+            stop_instances_sendmail=True
+            all_ids.append(str(instance.id))
+            mailtext=mailtext + "InstanceID: " + str(instance.id) + ", LaunchTime: " + str(instance.launch_time) + ", Instance.state: " + str(instance.state) + " AND "
         else:
             print("Instance-state is not running and/or time now-utc is smaller than the treshold, which means the instance was just started and runs less than x-hours.")
 
+    print(" ################### middle ################# ")
+    if stop_instances_sendmail:
+        print("all ids: ")
+        print(all_ids)
+        response = ec2_client.stop_instances(InstanceIds=all_ids)
+        print(response)
             
+        print("final mailtext: => ", mailtext)
+        send_mail(mailtext)
+    else:
+        print("Do not send mail because no instance was stopped.")
+
     print("end")
 
     # TODO implement
